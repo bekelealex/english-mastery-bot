@@ -1,50 +1,36 @@
 # -*- coding: utf-8 -*-
 """
 PREMIUM ENGLISH MASTERY TELEGRAM BOT
-ULTRA FAST - 100 Advanced Questions with Auto-Clearing Explanations
+PRODUCTION READY - ULTRA FAST - NO LAG - NO FREEZE
+100 Advanced English Questions with Auto-Clearing Explanations
 """
 
 import logging
-import asyncio
-import nest_asyncio
 import os
 import sys
-import threading
+import asyncio
 import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.constants import ParseMode
+from asyncio import Lock
 
-# 1. Fix for Google Colab/Jupyter
-nest_asyncio.apply()
+# ==================== CONFIGURATION ====================
 
-# 2. Setup Logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
-# 3. Get Bot Token from Environment Variable
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 if not BOT_TOKEN:
-    logger.error("❌ BOT_TOKEN not found! Please set BOT_TOKEN environment variable.")
+    print("❌ BOT_TOKEN not found!")
     sys.exit(1)
 
-logger.info("✅ Bot token loaded successfully")
-
-# 4. Keep Alive Function for GitHub Actions
-def keep_alive():
-    while True:
-        time.sleep(300)
-        logger.info("💓 Bot heartbeat - still running")
-
-heartbeat_thread = threading.Thread(target=keep_alive, daemon=True)
-heartbeat_thread.start()
+# Setup minimal logging for speed
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.WARNING,
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # ==================== COMPLETE 100 QUESTIONS DATABASE ====================
 
@@ -54,67 +40,67 @@ questions = [
         "question": "Read the passage and choose the correct verb form:\n\n'The ancient manuscript, which ______ in a monastery for centuries, was finally discovered in 2019.'",
         "options": ["A) had been hidden", "B) was hidden", "C) has been hidden", "D) is hidden"],
         "answer": "A",
-        "explanation": "Past Perfect Passive 'had been hidden' is used because the hiding occurred before the discovery in 2019."
+        "explanation": "Past Perfect Passive 'had been hidden' - the hiding occurred before discovery."
     },
     {
         "question": "Passage completion:\n\n'By the time the rescue team arrived, the survivors ______ for over 48 hours.'",
         "options": ["A) waited", "B) have been waiting", "C) had been waiting", "D) were waiting"],
         "answer": "C",
-        "explanation": "Past Perfect Continuous 'had been waiting' emphasizes the duration of waiting before another past action."
+        "explanation": "Past Perfect Continuous 'had been waiting' - duration before another past action."
     },
     {
         "question": "Passage completion:\n\n'Currently, the new bridge ______, and it's expected to open next spring.'",
         "options": ["A) is constructing", "B) is being constructed", "C) has constructed", "D) was constructed"],
         "answer": "B",
-        "explanation": "Present Continuous Passive 'is being constructed' indicates an ongoing action in the present."
+        "explanation": "Present Continuous Passive 'is being constructed' - ongoing action in present."
     },
     {
         "question": "Passage completion:\n\n'By 2030, scientists predict that renewable energy ______ fossil fuels as the primary power source.'",
         "options": ["A) will replace", "B) will have replaced", "C) replaces", "D) is replacing"],
         "answer": "B",
-        "explanation": "Future Perfect 'will have replaced' is used for actions completed by a specific future time."
+        "explanation": "Future Perfect 'will have replaced' - action completed by specific future time."
     },
     {
         "question": "Passage completion:\n\n'After the CEO ______ the company for 20 years, he announced his retirement.'",
         "options": ["A) led", "B) was leading", "C) had been leading", "D) has led"],
         "answer": "C",
-        "explanation": "Past Perfect Continuous 'had been leading' emphasizes the duration of leadership before the announcement."
+        "explanation": "Past Perfect Continuous 'had been leading' - duration before announcement."
     },
     {
         "question": "Passage completion:\n\n'Climate change, which ______ a global crisis for decades, requires immediate action.'",
         "options": ["A) was", "B) had been", "C) has been", "D) is"],
         "answer": "C",
-        "explanation": "Present Perfect 'has been' connects a past situation to the present reality."
+        "explanation": "Present Perfect 'has been' - connects past situation to present reality."
     },
     {
         "question": "Passage completion:\n\n'By the time you read this, the spacecraft ______ on Mars for three days.'",
         "options": ["A) will land", "B) will have landed", "C) will have been landing", "D) lands"],
         "answer": "C",
-        "explanation": "Future Perfect Continuous 'will have been landing' emphasizes the duration up to a future point."
+        "explanation": "Future Perfect Continuous 'will have been landing' - duration up to future point."
     },
     {
         "question": "Passage completion:\n\n'The artifacts, which ______ in the tomb since 3000 BCE, provided invaluable historical insights.'",
         "options": ["A) were buried", "B) had been buried", "C) have been buried", "D) are buried"],
         "answer": "B",
-        "explanation": "Past Perfect Passive 'had been buried' indicates the state before discovery."
+        "explanation": "Past Perfect Passive 'had been buried' - state before discovery."
     },
     {
         "question": "Passage completion:\n\n'As we speak, negotiations ______ between the two countries to resolve the conflict.'",
         "options": ["A) hold", "B) are held", "C) are being held", "D) have held"],
         "answer": "C",
-        "explanation": "Present Continuous Passive 'are being held' indicates ongoing action at the moment."
+        "explanation": "Present Continuous Passive 'are being held' - ongoing action at the moment."
     },
     {
         "question": "Passage completion:\n\n'The professor, along with her research team, ______ on this project since 2015.'",
         "options": ["A) work", "B) has been working", "C) have been working", "D) worked"],
         "answer": "B",
-        "explanation": "Present Perfect Continuous 'has been working' emphasizes duration from past to present."
+        "explanation": "Present Perfect Continuous 'has been working' - duration from past to present."
     },
     {
         "question": "Passage completion:\n\n'Before the internet revolutionized communication, information ______ primarily through print media.'",
         "options": ["A) was disseminated", "B) is disseminated", "C) has been disseminated", "D) disseminates"],
         "answer": "A",
-        "explanation": "Past Simple Passive 'was disseminated' describes a completed past state."
+        "explanation": "Past Simple Passive 'was disseminated' - completed past state."
     },
     {
         "question": "Passage completion:\n\n'The suspect ______ to have fled the country before the warrant was issued.'",
@@ -126,19 +112,19 @@ questions = [
         "question": "Passage completion:\n\n'By next December, I ______ as a software engineer for a decade.'",
         "options": ["A) will work", "B) will have been working", "C) work", "D) am working"],
         "answer": "B",
-        "explanation": "Future Perfect Continuous 'will have been working' emphasizes duration up to a future point."
+        "explanation": "Future Perfect Continuous 'will have been working' - duration up to future point."
     },
     {
         "question": "Passage completion:\n\n'The documentary, which ______ by millions worldwide, won multiple awards.'",
         "options": ["A) has been viewed", "B) had been viewed", "C) was viewed", "D) is viewed"],
         "answer": "A",
-        "explanation": "Present Perfect Passive 'has been viewed' connects past viewing to present recognition."
+        "explanation": "Present Perfect Passive 'has been viewed' - past viewing connects to present recognition."
     },
     {
         "question": "Passage completion:\n\n'During the summit, it ______ that the trade agreement would be signed by year-end.'",
         "options": ["A) announced", "B) was announced", "C) has announced", "D) is announcing"],
         "answer": "B",
-        "explanation": "Past Simple Passive 'was announced' for a reported event in the past."
+        "explanation": "Past Simple Passive 'was announced' - reported event in past."
     },
 
     # ==================== SECTION 2: MODAL AUXILIARIES IN CONVERSATIONS (16-25) ====================
@@ -152,7 +138,7 @@ questions = [
         "question": "Conversation:\n\nA: 'I'm exhausted. I ______ have stayed up so late.'\nB: 'You're right. You ______ have gone to bed earlier.'",
         "options": ["A) shouldn't / should", "B) mustn't / must", "C) couldn't / could", "D) wouldn't / would"],
         "answer": "A",
-        "explanation": "'Shouldn't have' expresses regret; 'should have' gives advice about a better past choice."
+        "explanation": "'Shouldn't have' expresses regret; 'should have' gives advice about better past choice."
     },
     {
         "question": "Conversation:\n\nA: 'Look at that car! It ______ have cost a fortune.'\nB: 'Definitely. Only a millionaire ______ afford that.'",
@@ -666,179 +652,209 @@ questions = [
     }
 ]
 
-# ==================== BOT FUNCTIONS ====================
+# ==================== OPTIMIZED DATA STRUCTURES ====================
 
 user_sessions = {}
+user_locks = {}
+session_lock = Lock()
+
+# ==================== HELPER FUNCTIONS ====================
+
+def get_user_lock(user_id):
+    """Get or create a lock for a user"""
+    if user_id not in user_locks:
+        user_locks[user_id] = Lock()
+    return user_locks[user_id]
+
+def get_progress_bar(current, total, width=10):
+    filled = int((current / total) * width)
+    return "█" * filled + "░" * (width - filled)
+
+def get_category(index):
+    if index < 15:
+        return "📖 Reading Completion"
+    elif index < 25:
+        return "💬 Modal Conversations"
+    elif index < 40:
+        return "🔄 Conditionals"
+    elif index < 50:
+        return "🗣️ Reported Speech"
+    elif index < 65:
+        return "📚 Advanced Vocabulary"
+    elif index < 90:
+        return "📖 Reading Comprehension"
+    else:
+        return "⏰ Tense Mastery"
 
 def get_level(percentage):
     if percentage >= 95:
-        return ("🏆 GRAND MASTER", "🌟 LEGENDARY! You're in the top 1% of English masters!")
+        return "🏆 GRAND MASTER"
     elif percentage >= 85:
-        return ("🥇 ADVANCED EXPERT", "🎉 EXCELLENT! You've demonstrated superior mastery!")
+        return "🥇 ADVANCED EXPERT"
     elif percentage >= 75:
-        return ("🥈 PROFICIENT", "📚 VERY GOOD! You have strong command of advanced English!")
+        return "🥈 PROFICIENT"
     elif percentage >= 65:
-        return ("🥉 COMPETENT", "💪 GOOD EFFORT! You have solid skills!")
+        return "🥉 COMPETENT"
     elif percentage >= 50:
-        return ("📘 INTERMEDIATE", "📖 KEEP PRACTICING! You're building a strong foundation!")
+        return "📘 INTERMEDIATE"
     else:
-        return ("🌱 DEVELOPING", "🌟 EVERY MASTER WAS ONCE A BEGINNER! Review and try again!")
+        return "🌱 DEVELOPING"
+
+# ==================== HANDLERS ====================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    username = update.effective_user.username or "Unknown"
     
-    user_sessions[user_id] = {"index": 0, "score": 0}
-    
-    logger.info(f"📱 User {username} ({user_id}) started the bot")
+    async with session_lock:
+        user_sessions[user_id] = {"index": 0, "score": 0}
     
     await update.message.reply_text(
-        "<b>🏆 PREMIUM ENGLISH MASTERY SUITE</b>\n\n"
-        "<b>📚 100 Expert-Level Questions</b>\n"
-        "✓ Reading Passage Completion\n"
-        "✓ Modal Auxiliaries\n"
-        "✓ All Conditionals\n"
-        "✓ Reported Speech\n"
-        "✓ Advanced Vocabulary\n"
-        "✓ Reading Comprehension\n"
-        "✓ All Tenses\n\n"
-        "<b>⚡ ULTRA FAST:</b>\n"
-        "✓ Instant responses\n"
-        "✓ 1-second auto-clear\n"
-        "✓ No lag\n\n"
+        "<b>🏆 PREMIUM ENGLISH MASTERY</b>\n\n"
+        f"<b>📚 {len(questions)} Expert Questions</b>\n"
+        "✓ Reading | ✓ Modals | ✓ Conditionals\n"
+        "✓ Reported | ✓ Vocabulary | ✓ Comprehension | ✓ Tenses\n\n"
+        "<b>⚡ ULTRA FAST</b>\n"
+        "✓ Instant responses | ✓ 1-second auto-clear\n\n"
         "<b>🎯 Let's begin!</b>",
-        parse_mode="HTML"
+        parse_mode=ParseMode.HTML
     )
     await send_question(update, context)
 
 async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    session = user_sessions.get(user_id)
     
-    if session and session["index"] < len(questions):
-        idx = session["index"]
-        q = questions[idx]
-        
-        keyboard = [[InlineKeyboardButton(opt, callback_data=opt[0])] for opt in q["options"]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        total_blocks = 10
-        filled_blocks = int((idx / len(questions)) * total_blocks)
-        progress = "█" * filled_blocks + "░" * (total_blocks - filled_blocks)
-        percent_complete = (idx / len(questions)) * 100
-        
-        if idx < 15:
-            section = "📖 Reading Completion"
-        elif idx < 25:
-            section = "💬 Modal Conversations"
-        elif idx < 40:
-            section = "🔄 Conditionals"
-        elif idx < 50:
-            section = "🗣️ Reported Speech"
-        elif idx < 65:
-            section = "📚 Advanced Vocabulary"
-        elif idx < 90:
-            section = "📖 Reading Comprehension"
-        else:
-            section = "⏰ Tense Mastery"
-        
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"<b>{section}</b>\n"
-                 f"<b>📝 Question {idx + 1}/{len(questions)}</b>\n"
-                 f"<code>[{progress}]</code> <i>{percent_complete:.0f}% Complete</i>\n\n"
-                 f"{q['question']}",
-            reply_markup=reply_markup,
-            parse_mode="HTML"
-        )
-    else:
-        score = session['score'] if session else 0
-        percentage = (score / len(questions)) * 100
-        level, feedback_msg = get_level(percentage)
-        
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"<b>🏆 QUIZ COMPLETE!</b>\n\n"
-                 f"📊 <b>Final Score:</b> {score}/{len(questions)}\n"
-                 f"📈 <b>Percentage:</b> {percentage:.1f}%\n"
-                 f"⭐ <b>Level:</b> {level}\n\n"
-                 f"{feedback_msg}\n\n"
-                 f"<i>Type /start to challenge yourself again! 🔄</i>",
-            parse_mode="HTML"
-        )
+    async with session_lock:
+        session = user_sessions.get(user_id)
+    
+    if not session or session["index"] >= len(questions):
+        if session:
+            score = session["score"]
+            percentage = (score / len(questions)) * 100
+            level = get_level(percentage)
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"<b>🏆 QUIZ COMPLETE!</b>\n\n"
+                     f"📊 <b>Score:</b> {score}/{len(questions)}\n"
+                     f"📈 <b>Percentage:</b> {percentage:.1f}%\n"
+                     f"⭐ <b>Level:</b> {level}\n\n"
+                     f"<i>Type /start to try again!</i>",
+                parse_mode=ParseMode.HTML
+            )
+        return
+    
+    idx = session["index"]
+    q = questions[idx]
+    
+    keyboard = [[InlineKeyboardButton(opt, callback_data=opt[0])] for opt in q["options"]]
+    
+    progress = get_progress_bar(idx, len(questions))
+    percent = (idx / len(questions)) * 100
+    category = get_category(idx)
+    
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"<b>{category}</b>\n"
+             f"<b>📝 Q{idx + 1}/{len(questions)}</b>\n"
+             f"<code>[{progress}]</code> <i>{percent:.0f}%</i>\n\n"
+             f"{q['question']}",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode=ParseMode.HTML
+    )
 
-# ✅ ULTRA FAST HANDLER - NO BLOCKING, 1 SECOND AUTO-CLEAR
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     
-    # INSTANT RESPONSE - CRITICAL FOR SPEED
     await query.answer()
     
-    if user_id not in user_sessions:
-        return
+    user_lock = get_user_lock(user_id)
     
-    session = user_sessions[user_id]
-    idx = session["index"]
-    
-    if idx >= len(questions):
-        return
-    
-    user_choice = query.data
-    q = questions[idx]
-    
-    # DISABLE BUTTONS IMMEDIATELY
-    try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except:
-        pass
-    
-    # PREPARE RESULT TEXT
-    if user_choice == q["answer"]:
-        session["score"] += 1
-        result_text = "✅ <b>CORRECT!</b> 🎯\n\n"
-    else:
-        correct_letter = q["answer"]
-        correct_text = next(opt for opt in q["options"] if opt.startswith(correct_letter))
-        result_text = f"❌ <b>INCORRECT</b>\n\n<b>✓ Correct Answer:</b> {correct_text}\n\n"
-    
-    explanation_text = result_text + f"<b>📖 Explanation:</b>\n{q['explanation']}\n\n<i>⚡ Next question in 1 second...</i>"
-    
-    # SEND EXPLANATION AS NEW MESSAGE
-    msg = await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=explanation_text,
-        parse_mode="HTML"
-    )
-    
-    # MOVE TO NEXT QUESTION IMMEDIATELY - NO WAITING
-    session["index"] += 1
-    await send_question(update, context)
-    
-    # DELETE EXPLANATION AFTER 1 SECOND (NON-BLOCKING BACKGROUND TASK)
-    async def delete_later():
-        await asyncio.sleep(1)  # ⚡ 1 SECOND ONLY
+    async with user_lock:
+        async with session_lock:
+            session = user_sessions.get(user_id)
+            if not session:
+                return
+            idx = session["index"]
+            if idx >= len(questions):
+                return
+            current_q = questions[idx]
+        
+        user_choice = query.data
+        
         try:
-            await msg.delete()
+            await query.edit_message_reply_markup(reply_markup=None)
         except:
             pass
+        
+        if user_choice == current_q["answer"]:
+            async with session_lock:
+                session["score"] += 1
+            result_text = "✅ <b>CORRECT!</b> 🎯\n\n"
+        else:
+            correct_letter = current_q["answer"]
+            correct_text = next(opt for opt in current_q["options"] if opt.startswith(correct_letter))
+            result_text = f"❌ <b>INCORRECT</b>\n\n<b>✓ Answer:</b> {correct_text}\n\n"
+        
+        explanation_text = result_text + f"<b>📖 Explanation:</b>\n{current_q['explanation']}"
+        
+        msg = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=explanation_text,
+            parse_mode=ParseMode.HTML
+        )
+        
+        async with session_lock:
+            session["index"] += 1
+        
+        await send_question(update, context)
+        
+        asyncio.create_task(delete_message_after_delay(context, update.effective_chat.id, msg.message_id, 1))
+
+async def delete_message_after_delay(context, chat_id, message_id, delay):
+    await asyncio.sleep(delay)
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+    except:
+        pass
+
+async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async with session_lock:
+        total_users = len(user_sessions)
     
-    asyncio.create_task(delete_later())
+    await update.message.reply_text(
+        f"<b>📊 STATISTICS</b>\n\n"
+        f"👥 Users: {total_users}\n"
+        f"📚 Questions: {len(questions)}",
+        parse_mode=ParseMode.HTML
+    )
+
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.error(f"Error: {context.error}")
+
+# ==================== MAIN ====================
 
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = Application.builder() \
+        .token(BOT_TOKEN) \
+        .concurrent_updates(True) \
+        .build()
     
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("stats", stats_command))
     app.add_handler(CallbackQueryHandler(handle_callback))
+    app.add_error_handler(error_handler)
     
-    logger.info("=" * 70)
-    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - ULTRA FAST")
-    logger.info(f"📚 Total Questions: {len(questions)}")
-    logger.info("⚡ SPEED: 1-second auto-clear | No blocking | Instant responses")
-    logger.info("=" * 70)
-    logger.info("✅ Bot is running and waiting for messages...")
+    logger.info("=" * 60)
+    logger.info("🤖 PREMIUM ENGLISH MASTERY BOT - PRODUCTION")
+    logger.info(f"📚 Questions: {len(questions)}")
+    logger.info("⚡ FEATURES: Concurrency | Locking | 1-Second Auto-Clear")
+    logger.info("=" * 60)
+    logger.info("✅ Bot is running...")
     
-    app.run_polling(close_loop=False)
+    app.run_polling(
+        drop_pending_updates=True,
+        allowed_updates=["message", "callback_query"]
+    )
 
 if __name__ == "__main__":
     try:
